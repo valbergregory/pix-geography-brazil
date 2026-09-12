@@ -1,0 +1,33 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+renv/library/
+renv/staging/
+_targets/
+data/raw/*
+data/processed/*
+output/*
+legacy_backup/
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!output/.gitkeep
+
+# pacotes, cópias e backups locais
+*.zip
+*.bak
+
+# --- Texto do artigo (local; nao versionado). Publicar apenas o PDF final em artigo/ ---
+overleaf/
+article/
+anpec/
+paper*/
+outputs/overleaf/
+*.tex
+*.bib
+*.pdf
+*.docx
+*.qmd
+CLAUDE.md
+.claude/
+!artigo/*.pdf

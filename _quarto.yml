@@ -1,0 +1,7 @@
+project:
+  type: default
+  output-dir: output/article
+
+execute-dir: project
+
+bibliography: article/references.bib

@@ -1,0 +1,78 @@
+project:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  output_dir: "output"
+
+bcb:
+  endpoint: "https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/odata/TransacoesPixPorMunicipio(DataBase=@DataBase)"
+  # This value appears in the official data-browser example. Its meaning must
+  # be confirmed with probe_bcb_database() before the article snapshot is frozen.
+  database_parameter: "20232"
+  # Add alternatives only after verifying them in the official BCB browser.
+  database_probe_candidates: []
+  page_size: 10000
+  max_pages: 500
+  timeout_seconds: 120
+  max_tries: 5
+
+quality:
+  minimum_identified_units: 5568
+  strict_geographic_coverage: true
+  require_complete_panel: true
+
+analysis:
+  target: "payer_count"
+  initial_window_months: 36
+  origin_step_months: 1
+  horizons: [1, 3, 6]
+  seasonal_period: 12
+  minimum_break_segment: 12
+  # Two small cross-region groups make the hierarchy non-degenerate in the pilot.
+  pilot_state_codes: [27, 14]
+  full_run_environment_variable: "PIX_FULL_RUN"
+  include_full_mint: false
+
+models:
+  global:
+    lags: [1, 2, 3, 6, 12]
+    rolling_windows: [3, 6, 12]
+    optional_covariates: []
+    target_transform: "log1p"
+    ridge:
+      enabled: true
+      lambda: 1.0
+    xgboost:
+      enabled: true
+      nrounds: 400
+      eta: 0.05
+      max_depth: 8
+      min_child_weight: 20
+      subsample: 0.8
+      colsample_bytree: 0.8
+      lambda: 1.0
+      alpha: 0.0
+
+execution:
+  random_seed: 20260830
+  parallel_threads: 1
+  resume: true
+  shap_sample_rows: 2000
+
+geography:
+  unidentified_key: "N/D"
+  stable_mt_key: "MT_STABLE_5101837_5106240_5107925"
+  stable_mt_name: "Sorriso + Nova Ubirata + Boa Esperanca do Norte (stable area)"
+  stable_mt_codes: [5101837, 5106240, 5107925]
+  geometry_year: 2022
+  geometry_cache_file: "data/processed/municipality_geometry_2022.rds"
+  fail_on_map_error_full_run: true
+
+reporting:
+  tables_dir: "output/tables"
+  figures_dir: "output/figures"
+  latex_dir: "output/latex"
+  figure_width_inches: 7.2
+  figure_height_inches: 4.6
+  figure_dpi: 320
+  benchmark_model: "seasonal_naive"
+  comparison_model: "xgboost_global_bottom_up"

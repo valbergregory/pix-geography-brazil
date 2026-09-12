@@ -1,0 +1,23 @@
+source,source_field,project_field,definition,unit,frequency,geographic_level,perspective,role,additive,initial_treatment,verification_status
+BCB,AnoMes,month,Reference month in YYYYMM format,month,monthly,municipality,not applicable,key,no,Convert to first day of month,verified in API metadata
+BCB,Municipio_Ibge,municipality_code,IBGE municipality code,code,monthly,municipality,not applicable,key,no,Preserve missing code as unidentified geography,verified in API metadata
+BCB,Municipio,municipality_name,Municipality name,text,monthly,municipality,not applicable,label,no,Standardize encoding and territorial exceptions,verified in API metadata
+BCB,Estado_Ibge,state_code,IBGE state code,code,monthly,state,not applicable,hierarchy key,no,Format with two digits,verified in API metadata
+BCB,Estado,state_name,State name,text,monthly,state,not applicable,label,no,Standardize encoding,verified in API metadata
+BCB,Sigla_Regiao,region_code,BCB macroregion abbreviation,code,monthly,macroregion,not applicable,hierarchy key,no,Validate against CO NE NO SE SU,verified in API metadata
+BCB,Regiao,region_name,Macroregion name,text,monthly,macroregion,not applicable,label,no,Standardize encoding,verified in API metadata
+BCB,QT_PagadorPF,payer_count_pf,Pix transactions attributed to individual payers,count,monthly,municipality,payer,target component,yes,Retain raw nonnegative value,field verified; attribution semantics pending detailed documentation
+BCB,QT_PagadorPJ,payer_count_pj,Pix transactions attributed to legal-entity payers,count,monthly,municipality,payer,target component,yes,Retain raw nonnegative value,field verified; attribution semantics pending detailed documentation
+BCB,VL_PagadorPF,payer_value_pf,Nominal Pix value attributed to individual payers,BRL,monthly,municipality,payer,robustness target component,yes,Retain nominal value and deflate later,field verified; attribution semantics pending detailed documentation
+BCB,VL_PagadorPJ,payer_value_pj,Nominal Pix value attributed to legal-entity payers,BRL,monthly,municipality,payer,robustness target component,yes,Retain nominal value and deflate later,field verified; attribution semantics pending detailed documentation
+BCB,QT_PES_PagadorPF,active_payers_pf,Number of individual payers with Pix activity,persons,monthly,municipality,payer,descriptive extension,yes,Audit whether persons have one geographic attribution,field verified; detailed semantics pending
+BCB,QT_PES_PagadorPJ,active_payers_pj,Number of legal-entity payers with Pix activity,entities,monthly,municipality,payer,descriptive extension,yes,Audit whether entities have one geographic attribution,field verified; detailed semantics pending
+Derived,QT_PagadorPF+QT_PagadorPJ,payer_count,Outgoing Pix transaction count,count,monthly,stable municipality,payer,primary target,yes,Forecast and reconcile on raw scale,design frozen
+Derived,VL_PagadorPF+VL_PagadorPJ,payer_value_nominal,Outgoing nominal Pix value,BRL,monthly,stable municipality,payer,secondary target,yes,Deflate before secondary forecasting experiment,design frozen
+Derived,payer_count/population,payer_count_per_capita,Outgoing Pix intensity per resident,count per resident,monthly,stable municipality,payer,journal extension,no,Calculate only after reconciliation,not implemented in current pipeline
+IBGE,population,population,Resident population estimate,persons,annual,municipality,not applicable,denominator,no,Use vintage-aware annual estimate; no automatic monthly interpolation,pending extraction audit
+IBGE,IPCA,ipca_national,National consumer price index,index,monthly,Brazil,not applicable,deflator,no,Use one common monthly scalar so real values remain additive,pending extraction audit
+IBGE,municipal_gdp,gdp_per_capita,Municipal GDP per capita,BRL per resident,annual,municipality,not applicable,structural stratifier,no,Use only information released by each forecast origin,pending release-lag audit
+ANATEL,fixed_broadband_accesses,fixed_broadband_density,Fixed broadband accesses relative to population,accesses per population,monthly,municipality,not applicable,covariate or stratifier,no,Lag according to publication availability,pending extraction audit
+ANATEL,mobile_coverage,mobile_coverage_4gplus,Estimated population covered by 4G or higher,percent,periodic,municipality,not applicable,stratifier,no,Do not equate estimated coverage with measured quality,pending extraction audit
+MTE,Novo_Caged,formal_employment_balance,Admissions minus separations in formal employment,jobs,monthly,municipality,not applicable,journal extension,no,Respect publication calendar and revisions,pending extraction audit
