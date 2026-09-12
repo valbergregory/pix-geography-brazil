@@ -1,0 +1,254 @@
+---
+title: "Forecasting Pix Across Brazil: Global Models and Coherent Geographic Reconciliation"
+author:
+  - name: "Author name"
+    affiliation: "Affiliation"
+format:
+  pdf:
+    number-sections: true
+    keep-tex: true
+    include-in-header: preamble.tex
+execute:
+  echo: false
+  warning: false
+  cache: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+include_tex <- function(path) {
+  if (!file.exists(path)) {
+    safe_path <- gsub("_", "\\\\_", path, fixed = TRUE)
+    return(knitr::asis_output(paste0(
+      "\\begin{quote}\\textit{Output not generated yet: ",
+      safe_path,
+      ".}\\end{quote}"
+    )))
+  }
+  knitr::asis_output(paste(readLines(path, warn = FALSE), collapse = "\n"))
+}
+
+include_figure <- function(path) {
+  if (!file.exists(path)) {
+    safe_path <- gsub("_", "\\\\_", path, fixed = TRUE)
+    return(knitr::asis_output(paste0(
+      "\\begin{quote}\\textit{Figure not generated yet: ",
+      safe_path,
+      ".}\\end{quote}"
+    )))
+  }
+  knitr::include_graphics(path)
+}
+
+prefer_national <- function(national_path, pilot_path) {
+  if (file.exists(national_path)) national_path else pilot_path
+}
+```
+
+## Abstract
+
+<!-- Write last. Report the problem, data, rolling-origin design, main quantitative result, and contribution in 180–220 words. -->
+
+## Introduction
+
+<!-- Motivate municipal Pix forecasting; define the gap; state the research question and four contributions. -->
+
+## Related Work
+
+### Pix and instant payments as digital infrastructure
+
+### Global forecasting of many related time series
+
+### Hierarchical forecast reconciliation
+
+### Structural breaks and forecast reliability
+
+## Data and Forecasting Problem
+
+### Official data sources
+
+```{r}
+#| label: tbl-data-coverage
+#| results: asis
+include_tex("output/tables/table_data_coverage.tex")
+```
+
+### Target definition
+
+The primary target is the monthly number of outgoing Pix transactions:
+
+$$
+y_{i,t} = QT\_PagadorPF_{i,t} + QT\_PagadorPJ_{i,t}.
+$$
+
+### Stable geographic hierarchy
+
+### Forecasting task
+
+```{r}
+#| label: fig-pix-national
+#| fig-cap: "Evolution of outgoing Pix transactions in Brazil."
+include_figure("output/figures/figure_pix_evolution_national.pdf")
+```
+
+```{r}
+#| label: fig-pix-regions
+#| fig-cap: "Evolution of outgoing Pix transactions across macroregions."
+include_figure("output/figures/figure_pix_evolution_regions.pdf")
+```
+
+## Methods
+
+### Local statistical baselines
+
+### Global forecasting models
+
+```{r}
+#| label: tbl-global-model-parameters
+#| results: asis
+include_tex(prefer_national(
+  "output/tables/table_global_model_parameters_national.tex",
+  "output/tables/table_global_model_parameters_pilot_alagoas_roraima.tex"
+))
+```
+
+### Forecast reconciliation
+
+### Structural-break diagnostics
+
+```{r}
+#| label: fig-structural-breaks
+#| fig-cap: "Structural-break diagnostics for national Pix activity."
+include_figure("output/figures/figure_structural_breaks.pdf")
+```
+
+## Experimental Design
+
+```{r}
+#| label: tbl-experimental-design
+#| results: asis
+include_tex("output/tables/quadro_experimental_design.tex")
+```
+
+### Rolling-origin validation
+
+### Accuracy metrics
+
+### Statistical comparison and ablations
+
+## Forecasting Results
+
+### Overall model comparison
+
+```{r}
+#| label: tbl-municipal-accuracy
+#| results: asis
+include_tex("output/tables/table_forecast_accuracy_municipal.tex")
+```
+
+```{r}
+#| label: fig-accuracy-horizon
+#| fig-cap: "Municipality-level forecast accuracy by model and horizon."
+include_figure("output/figures/figure_accuracy_by_horizon.pdf")
+```
+
+### Value of global learning
+
+```{r}
+#| label: tbl-relative-gain
+#| results: asis
+include_tex("output/tables/table_relative_gain.tex")
+```
+
+```{r}
+#| label: fig-relative-gain
+#| fig-cap: "Forecast gains relative to the seasonal-naive benchmark."
+include_figure("output/figures/figure_relative_gain.pdf")
+```
+
+### Value and computational cost of reconciliation
+
+```{r}
+#| label: tbl-hierarchy-accuracy
+#| results: asis
+include_tex("output/tables/table_forecast_accuracy_hierarchy.tex")
+```
+
+```{r}
+#| label: tbl-newey-west
+#| results: asis
+include_tex("output/tables/table_newey_west_comparison.tex")
+```
+
+```{r}
+#| label: tbl-runtime
+#| results: asis
+include_tex("output/tables/table_runtime.tex")
+```
+
+### Robustness checks
+
+```{r}
+#| label: tbl-scaled-metric-coverage
+#| results: asis
+include_tex("output/tables/table_scaled_metric_coverage.tex")
+```
+
+```{r}
+#| label: tbl-negative-predictions
+#| results: asis
+include_tex("output/tables/table_negative_predictions.tex")
+```
+
+```{r}
+#| label: fig-error-distribution
+#| fig-cap: "Distribution of scaled absolute forecast errors."
+include_figure("output/figures/figure_error_distribution.pdf")
+```
+
+## Geographic Regimes and Forecast Reliability
+
+```{r}
+#| label: fig-forecast-gain-map
+#| fig-cap: "Spatial distribution of XGBoost forecast gains relative to the seasonal-naive benchmark at horizon one."
+include_figure(prefer_national(
+  "output/figures/figure_forecast_gain_map_national_h1.pdf",
+  "output/figures/figure_forecast_gain_map_pilot_alagoas_roraima_h1.pdf"
+))
+```
+
+```{r}
+#| label: tbl-forecast-reliability
+#| results: asis
+include_tex(prefer_national(
+  "output/tables/table_forecast_reliability_national.tex",
+  "output/tables/table_forecast_reliability_pilot_alagoas_roraima.tex"
+))
+```
+
+```{r}
+#| label: tbl-xgboost-shap
+#| results: asis
+include_tex(prefer_national(
+  "output/tables/table_xgboost_shap_national.tex",
+  "output/tables/table_xgboost_shap_pilot_alagoas_roraima.tex"
+))
+```
+
+```{r}
+#| label: fig-xgboost-shap
+#| fig-cap: "Mean absolute TreeSHAP contributions for the global XGBoost model estimated in R."
+include_figure(prefer_national(
+  "output/figures/figure_xgboost_shap_national.pdf",
+  "output/figures/figure_xgboost_shap_pilot_alagoas_roraima.pdf"
+))
+```
+
+## Discussion and Limitations
+
+## Conclusion
+
+## Data and Code Availability
+
+<!-- Insert the archived code release, extraction vintage, and official-source links at submission. -->
