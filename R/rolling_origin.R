@@ -89,7 +89,14 @@ rolling_origin_evaluate <- function(
         character(1)
       ),
       analysis = config$analysis,
-      data_hash = digest::digest(hierarchy_ts, algo = "xxhash64")
+      data_hash = digest::digest(hierarchy_ts, algo = "xxhash64"),
+      # ARIMA silently returns NULL models without urca (pilot of 2026-10-02):
+      # checkpoints computed without it must not be reused once it is installed.
+      arima_backend = if (identical(batch, "local_with_arima")) {
+        requireNamespace("urca", quietly = TRUE)
+      } else {
+        NA
+      }
     )), 1L, 12L)
     checkpoint_directory <- file.path(
       config$project$processed_dir,
