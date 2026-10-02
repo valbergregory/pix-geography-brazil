@@ -14,6 +14,10 @@ pilot_approval_thresholds <- function() {
     # C3: global models are identified by the bottom-up suffix used in
     # aggregate_bottom_up_predictions().
     global_model_pattern = "_global_bottom_up$",
+    # C3: only these global models gate approval (author decision 2026-10-02:
+    # XGBoost is the primary global model; ridge is reported as a comparison,
+    # criterion "C3-info", and does not gate the national run).
+    primary_global_models = "xgboost_global_bottom_up",
     # C3: a horizon only counts when at least this share of paired
     # municipality-origins has a valid seasonal scale for both models.
     minimum_scaled_share = 0.90,
@@ -490,6 +494,19 @@ check_pilot_predictive <- function(
     ))
   }
 
+  primary_models <- intersect(global_models, thresholds$primary_global_models)
+  if (length(primary_models) == 0L) {
+    return(pilot_check_row(
+      "C3", "primary global model available", FALSE,
+      source = source,
+      detail = paste0(
+        "Primary global model(s) ",
+        paste(thresholds$primary_global_models, collapse = ", "),
+        " not found among: ", paste(global_models, collapse = ", ")
+      )
+    ))
+  }
+
   accuracy <- paired_scale_free_accuracy_by_state(error_rows, global_models, benchmark_model)
   metrics <- thresholds$scale_free_metrics
   grid <- tidyr::expand_grid(
@@ -524,7 +541,7 @@ check_pilot_predictive <- function(
         collapse = "; "
       )
       pilot_check_row(
-        "C3",
+        if (.y$.model %in% primary_models) "C3" else "C3-info",
         paste0(.y$.model, " beats ", benchmark_model, " in state ", .y$state_code),
         wins >= required_wins,
         value = paste0(wins, "/", length(horizons), " horizons"),

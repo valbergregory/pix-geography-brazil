@@ -80,3 +80,17 @@ deve começar com C1–C4 = PASS.
   janela inteira com o lambda escolhido. `config.yml`: `lambda: "temporal_cv"`.
 - **Mudança feita depois de ver o piloto**: registrar no artigo. O critério C3
   NÃO foi alterado; o piloto será refeito com o mesmo critério.
+
+## 2026-10-02 — XGBoost como modelo global principal; Ridge como comparação (decisão do autor)
+
+- 2º piloto (lambda do Ridge por validação temporal): o Ridge perdeu para o
+  ingênuo sazonal em AL (0/3 horizontes) e em RR (1/3). O XGBoost venceu nos
+  3 horizontes nas duas UFs. C2 e C4 continuaram PASS.
+- Decisão do autor (opção b): o C3 passa a exigir só o modelo global principal
+  (`xgboost_global_bottom_up`); o Ridge segue estimado e reportado como modelo de
+  comparação (`C3-info` no relatório de aprovação).
+- **Mudança de critério feita depois de ver o piloto**: registrar no artigo.
+  Leitura substantiva para o texto: o modelo global linear não supera o ingênuo
+  sazonal; a não linearidade da difusão do Pix parece essencial.
+- O lambda por validação temporal foi mantido (voltar a `lambda = 1` por ter dado
+  número melhor seria escolher o resultado).

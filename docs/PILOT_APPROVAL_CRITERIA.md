@@ -59,10 +59,12 @@ Na avaliação por origem móvel, os modelos globais superam o benchmark ingênu
 sazonal em pelo menos uma métrica de escala livre na maioria dos horizontes,
 para os dois estados.
 
-- Modelos globais: todos os modelos `*_global_bottom_up` presentes
-  (`ridge_global_bottom_up` e `xgboost_global_bottom_up` com a configuração
-  atual). **Cada** modelo global precisa passar em **cada** estado (leitura
-  conservadora de "os modelos globais").
+- Modelos globais: **a partir de 02/10/2026 (decisão do autor, após o 2º piloto),
+  só o modelo global principal, `xgboost_global_bottom_up`, decide o C3** e
+  precisa passar em **cada** estado. O `ridge_global_bottom_up` continua sendo
+  avaliado e aparece no relatório como `C3-info` (modelo de comparação), sem
+  bloquear a aprovação. Versão original (até 02/10): cada modelo global
+  precisava passar em cada estado.
 - Unidade: nível municipal, por UF (27 e 14), por horizonte.
 - Pareamento: só entram pares (município, origem, horizonte) presentes no modelo
   global e no `seasonal_naive`, com escala sazonal válida para ambos.
