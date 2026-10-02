@@ -52,3 +52,19 @@ deve começar com C1–C4 = PASS.
   `.json`) em vez de baixar de novo. Deixe `""` para extrair um snapshot novo.
 - Consequência: o piloto e, se aprovado, a análise nacional usam a série
   disponível em 30/08/2026. O mês final da amostra é o registrado no `.json`.
+
+## 2026-10-02 — Exclusão de dois municípios do RN (decisão do autor)
+
+- O painel de geografia estável tinha 106 células município-mês ausentes, todas
+  em 2401305 (Campo Grande, RN) e 2405306 (Januário Cicco, RN): os dois códigos
+  só aparecem na série do BCB a partir de 2025-04, sem código antigo que termine
+  em 2025-03. As transações anteriores foram registradas em outra rubrica
+  (provavelmente N/D ou homônimo), então preencher com zero seria incorreto.
+- Decisão do autor: excluir os dois municípios do painel de análise via
+  `geography.excluded_municipality_codes` em `config.yml`
+  (`exclude_municipalities()`, aplicada antes da agregação). Eles saem também
+  dos agregados de UF, região e Brasil, o que mantém a hierarquia coerente.
+- Peso desprezível (2 de 5.570 municípios); não afeta o piloto (AL e RR).
+  O artigo deve registrar a exclusão em nota.
+- A validação bruta (`minimum_identified_units = 5568`) continua sobre os dados
+  originais, antes da exclusão.

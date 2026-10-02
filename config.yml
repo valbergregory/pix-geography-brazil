@@ -69,6 +69,12 @@ geography:
   stable_mt_key: "MT_STABLE_5101837_5106240_5107925"
   stable_mt_name: "Sorriso + Nova Ubirata + Boa Esperanca do Norte (stable area)"
   stable_mt_codes: [5101837, 5106240, 5107925]
+  # Municipalities removed from the analysis panel (and therefore from every
+  # UF/region/Brazil aggregate). 2401305 Campo Grande (RN) and 2405306 Januario
+  # Cicco (RN) only exist in the BCB series from 2025-04; before that their
+  # transactions were recorded elsewhere, so zero-filling would be wrong.
+  # See AUDIT_DECISIONS.md (2026-10-02).
+  excluded_municipality_codes: [2401305, 2405306]
   geometry_year: 2022
   geometry_cache_file: "data/processed/municipality_geometry_2022.rds"
   fail_on_map_error_full_run: true
