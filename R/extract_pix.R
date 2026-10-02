@@ -251,7 +251,51 @@ write_json_metadata <- function(metadata, path) {
   path
 }
 
+frozen_snapshot_files <- function(config) {
+  parquet_path <- config$bcb$frozen_snapshot
+  if (is.null(parquet_path) || !nzchar(as.character(parquet_path))) {
+    return(NULL)
+  }
+  parquet_path <- as.character(parquet_path)
+  if (!grepl("\\.parquet$", parquet_path)) {
+    stop("bcb$frozen_snapshot must point to a .parquet file.", call. = FALSE)
+  }
+  if (!file.exists(parquet_path)) {
+    stop("Frozen snapshot not found: ", parquet_path, call. = FALSE)
+  }
+  metadata_path <- sub("\\.parquet$", ".json", parquet_path)
+  if (!file.exists(metadata_path)) {
+    stop(
+      "Frozen snapshot has no metadata file next to it: ", metadata_path,
+      call. = FALSE
+    )
+  }
+
+  metadata <- jsonlite::read_json(metadata_path)
+  observed_sha <- digest::digest(parquet_path, algo = "sha256", file = TRUE)
+  if (is.null(metadata$sha256_parquet)) {
+    warning(
+      "Frozen snapshot metadata has no sha256_parquet; integrity not verified. ",
+      "Observed SHA-256: ", observed_sha,
+      call. = FALSE
+    )
+  } else if (!identical(as.character(metadata$sha256_parquet), observed_sha)) {
+    stop(
+      "Frozen snapshot SHA-256 does not match its metadata: ", parquet_path,
+      call. = FALSE
+    )
+  }
+
+  normalizePath(c(parquet_path, metadata_path), winslash = "/", mustWork = TRUE)
+}
+
 extract_pix_snapshot <- function(config) {
+  frozen <- frozen_snapshot_files(config)
+  if (!is.null(frozen)) {
+    message("Using frozen BCB snapshot (no download): ", frozen[[1]])
+    return(frozen)
+  }
+
   ensure_project_directories(config)
   extraction_time <- Sys.time()
   snapshot_id <- timestamp_id(extraction_time)
