@@ -94,3 +94,13 @@ deve começar com C1–C4 = PASS.
   sazonal; a não linearidade da difusão do Pix parece essencial.
 - O lambda por validação temporal foi mantido (voltar a `lambda = 1` por ter dado
   número melhor seria escolher o resultado).
+
+## 2026-10-02 — ARIMA nulo em todas as séries: faltava o pacote `urca`
+
+- No piloto, `baseline_models` registrou "105 errors (1 unique) encountered for
+  arima": o ARIMA ficou nulo em 105 de 105 séries. Causa: o `fable::ARIMA()` usa o
+  pacote `urca` nos testes de raiz unitária, e ele não estava instalado nem
+  listado. Ajustado manualmente numa série, o modelo estima normalmente
+  (ARIMA(1,1,2)(1,0,1)[12] com drift).
+- Correção: `urca` entra em `required_packages` (R/setup.R) e no `renv.lock`.
+  Os resultados do ARIMA dos pilotos anteriores não valem; o piloto é refeito.
