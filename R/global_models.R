@@ -248,20 +248,103 @@ inverse_global_target <- function(prediction, transform) {
   pmax(as.numeric(prediction), 0)
 }
 
-fit_ridge_global <- function(design, target, config) {
+ridge_validation_split <- function(target_months, validation_months) {
+  target_months <- as.Date(target_months)
+  validation_months <- as.integer(validation_months)
+  if (length(validation_months) != 1L || is.na(validation_months) ||
+      validation_months < 1L) {
+    stop("ridge$validation_months must be a positive integer.", call. = FALSE)
+  }
+  last_month <- max(target_months)
+  cutoff <- seq(last_month, by = paste0("-", validation_months, " months"),
+                length.out = 2L)[[2L]]
+  is_validation <- target_months > cutoff
+  if (!any(is_validation) || all(is_validation)) {
+    stop(
+      "Temporal validation for the ridge lambda needs both training and ",
+      "validation months inside the estimation window.",
+      call. = FALSE
+    )
+  }
+  is_validation
+}
+
+select_ridge_lambda <- function(
+    x,
+    target,
+    target_months,
+    validation_months,
+    transform) {
+  transformed <- if (identical(transform, "log1p")) log1p(target) else target
+  is_validation <- ridge_validation_split(target_months, validation_months)
+  path_fit <- glmnet::glmnet(
+    x = x[!is_validation, , drop = FALSE],
+    y = transformed[!is_validation],
+    family = "gaussian",
+    alpha = 0,
+    standardize = TRUE,
+    intercept = TRUE
+  )
+  predicted <- stats::predict(
+    path_fit,
+    newx = x[is_validation, , drop = FALSE],
+    s = path_fit$lambda
+  )
+  observed <- target[is_validation]
+  loss <- apply(predicted, 2L, function(column) {
+    mean(abs(inverse_global_target(column, transform) - observed))
+  })
+  best <- which.min(loss)
+  list(
+    lambda = path_fit$lambda[[best]],
+    path = path_fit$lambda,
+    validation_mae = loss[[best]],
+    validation_rows = sum(is_validation)
+  )
+}
+
+fit_ridge_global <- function(design, target, config, target_months = NULL) {
+  settings <- config$models$global$ridge
   transform <- config$models$global$target_transform
   transformed_target <- if (identical(transform, "log1p")) {
     log1p(target)
   } else {
     target
   }
-  lambda <- as.numeric(config$models$global$ridge$lambda)
+
+  # lambda: "temporal_cv" chooses lambda on the last `validation_months` of the
+  # estimation window (labels dated <= origin only, so no look-ahead), by MAE on
+  # the original scale; then refits on the whole window. A number keeps the
+  # fixed-lambda behaviour.
+  selection <- NULL
+  if (identical(as.character(settings$lambda), "temporal_cv")) {
+    if (is.null(target_months)) {
+      stop("temporal_cv lambda needs the label months.", call. = FALSE)
+    }
+    selection <- select_ridge_lambda(
+      design$x_train,
+      target,
+      target_months,
+      settings$validation_months,
+      transform
+    )
+    lambda <- selection$lambda
+    lambda_path <- selection$path
+  } else {
+    lambda <- as.numeric(settings$lambda)
+    if (length(lambda) != 1L || is.na(lambda) || lambda < 0) {
+      stop("ridge$lambda must be a non-negative number or 'temporal_cv'.",
+           call. = FALSE)
+    }
+    lambda_path <- lambda
+  }
+
   model <- glmnet::glmnet(
     x = design$x_train,
     y = transformed_target,
     family = "gaussian",
     alpha = 0,
-    lambda = lambda,
+    lambda = sort(unique(c(lambda_path, lambda)), decreasing = TRUE),
     standardize = TRUE,
     intercept = TRUE
   )
@@ -273,7 +356,8 @@ fit_ridge_global <- function(design, target, config) {
   list(
     model = model,
     prediction = inverse_global_target(prediction, transform),
-    lambda = lambda
+    lambda = lambda,
+    selection = selection
   )
 }
 
@@ -511,7 +595,10 @@ global_model_summary_table <- function(fitted, config, origin) {
       Model = "ridge_global",
       Engine = "glmnet",
       Transform = config$models$global$target_transform,
-      Hyperparameters = paste0("alpha=0; lambda=", fitted$ridge_global$lambda),
+      Hyperparameters = paste0(
+        "alpha=0; lambda=", signif(fitted$ridge_global$lambda, 4),
+        if (!is.null(fitted$ridge_global$selection)) " (temporal CV)" else ""
+      ),
       `Last fitted origin` = format(as.Date(origin), "%Y-%m")
     )
   }
@@ -713,7 +800,12 @@ fit_global_models_at_origin <- function(feature_panel, origin, config) {
   prediction_blocks <- list()
 
   if (isTRUE(config$models$global$ridge$enabled)) {
-    fitted$ridge_global <- fit_ridge_global(design, stacked$y_train, config)
+    fitted$ridge_global <- fit_ridge_global(
+      design,
+      stacked$y_train,
+      config,
+      target_months = stacked$target_months
+    )
     prediction_blocks[[length(prediction_blocks) + 1L]] <- stacked$metadata |>
       dplyr::mutate(
         hierarchy_level = "municipality",

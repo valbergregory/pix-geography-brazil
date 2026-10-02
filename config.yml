@@ -46,7 +46,11 @@ models:
     target_transform: "log1p"
     ridge:
       enabled: true
-      lambda: 1.0
+      # "temporal_cv": lambda chosen at each origin on the last
+      # `validation_months` of the estimation window (MAE, original scale),
+      # then refit on the whole window. Was fixed at 1.0 until 2026-10-02.
+      lambda: "temporal_cv"
+      validation_months: 6
     xgboost:
       enabled: true
       nrounds: 400
