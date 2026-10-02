@@ -76,9 +76,28 @@ apply_stable_geography <- function(data, config) {
     )
 }
 
+exclude_municipalities <- function(data, config) {
+  excluded <- as.integer(unlist(config$geography$excluded_municipality_codes))
+  if (length(excluded) == 0L) {
+    return(data)
+  }
+  if (anyNA(excluded)) {
+    stop(
+      "geography$excluded_municipality_codes must contain IBGE codes only.",
+      call. = FALSE
+    )
+  }
+  data |>
+    dplyr::filter(
+      is.na(.data$municipality_code) |
+        !.data$municipality_code %in% excluded
+    )
+}
+
 build_analysis_panel <- function(raw_data, config) {
   raw_data |>
     standardize_pix_columns() |>
+    exclude_municipalities(config) |>
     build_additive_targets() |>
     apply_stable_geography(config) |>
     dplyr::arrange(.data$stable_municipality_id, .data$month)
