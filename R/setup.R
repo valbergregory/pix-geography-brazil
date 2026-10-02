@@ -38,6 +38,9 @@ required_packages <- c(
   "tidyr",
   "tidyselect",
   "tsibble",
+  # fable::ARIMA() needs urca for its unit-root tests; without it every ARIMA
+  # fit silently became a NULL model (pilot of 2026-10-02: 105/105 series).
+  "urca",
   "viridisLite",
   "xgboost",
   "yaml"
