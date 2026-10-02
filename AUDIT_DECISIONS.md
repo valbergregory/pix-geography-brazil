@@ -39,3 +39,16 @@ preditivo contra o ingênuo sazonal e reconciliação) estão operacionalizados 
 verificação. `check_pilot.R` os avalia e grava `output/pilot_approval.csv` e
 `output/pilot_approval.md`; dado ausente conta como FAIL. A execução nacional só
 deve começar com C1–C4 = PASS.
+
+## 2026-10-02 — Snapshot congelado de 30/08/2026 para o piloto
+
+- O recurso `TransacoesPixPorMunicipio` do BCB devolveu HTTP 500 em todas as
+  chamadas testadas em 02/10/2026 (`diagnose_bcb3.R`: com e sem `$skip`, com
+  `DataBase` 20232, 202306 e 202312, JSON e CSV). Não é defeito do código.
+- A extração completa de 30/08/2026 existe localmente
+  (`data/raw/pix_municipality_20260830T144952Z.parquet` + `.json`).
+- Nova opção `bcb.frozen_snapshot` em `config.yml`: quando preenchida, o alvo
+  `raw_snapshot_files` reutiliza esse Parquet (conferindo o SHA-256 gravado no
+  `.json`) em vez de baixar de novo. Deixe `""` para extrair um snapshot novo.
+- Consequência: o piloto e, se aprovado, a análise nacional usam a série
+  disponível em 30/08/2026. O mês final da amostra é o registrado no `.json`.

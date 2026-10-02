@@ -10,6 +10,12 @@ bcb:
   database_parameter: "20232"
   # Add alternatives only after verifying them in the official BCB browser.
   database_probe_candidates: []
+  # Frozen snapshot: when set, the pipeline reuses this Parquet file (and the
+  # .json metadata next to it) instead of downloading from the BCB. Its SHA-256
+  # is checked against the metadata. Leave empty ("") to extract a new snapshot.
+  # 2026-10-02: the BCB resource returned HTTP 500 on every call, so the pilot
+  # uses the snapshot extracted on 2026-08-30.
+  frozen_snapshot: "data/raw/pix_municipality_20260830T144952Z.parquet"
   page_size: 10000
   max_pages: 500
   timeout_seconds: 120
