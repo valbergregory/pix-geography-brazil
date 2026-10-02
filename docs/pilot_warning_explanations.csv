@@ -1,1 +1,2 @@
 target,explanation
+raw_snapshot_files,"Esperado: o snapshot congelado de 2026-08-30 foi gravado por versão anterior do código, cujo .json não registra sha256_parquet; a integridade não é conferida automaticamente (decisão de 2026-10-02 em AUDIT_DECISIONS.md)."
