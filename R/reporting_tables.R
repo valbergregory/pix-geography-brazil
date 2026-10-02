@@ -247,17 +247,23 @@ export_modelsummary_latex <- function(
 export_fixest_latex <- function(models, filename, config, ...) {
   ensure_project_directories(config)
   path <- file.path(config$reporting$tables_dir, filename)
-  arguments <- c(
-    unname(models),
-    list(
-      tex = TRUE,
-      file = path,
-      replace = TRUE,
-      style.tex = fixest::style.tex(main = "aer")
-    ),
-    list(...)
+  if (inherits(models, "fixest")) {
+    models <- list(models)
+  }
+  if (is.null(names(models)) || any(!nzchar(names(models)))) {
+    names(models) <- sprintf("(%d)", seq_along(models))
+  }
+  # Direct call (not do.call): etable() derives column names from the call;
+  # do.call() passed the deparsed model object instead (43 lines), which made
+  # fixest fail with "'length = 43' in coercion to 'logical(1)'".
+  fixest::etable(
+    models,
+    tex = TRUE,
+    file = path,
+    replace = TRUE,
+    style.tex = fixest::style.tex(main = "aer"),
+    ...
   )
-  do.call(fixest::etable, arguments)
   normalizePath(path, winslash = "/", mustWork = TRUE)
 }
 
