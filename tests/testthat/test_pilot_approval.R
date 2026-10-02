@@ -264,3 +264,18 @@ test_that("the approval report is written as CSV and Markdown", {
   expect_true(any(grepl("Resultado geral: FAIL", markdown, fixed = TRUE)))
   expect_true(any(grepl("pipe \\| inside", markdown, fixed = TRUE)))
 })
+
+test_that("ridge losing to the benchmark is reported but does not gate C3", {
+  rows <- synthetic_pilot_error_rows()
+  ridge <- rows$.model == "ridge_global_bottom_up"
+  rows$absolute_error[ridge] <- rows$absolute_error[ridge] * 10
+  rows$squared_error[ridge] <- rows$squared_error[ridge] * 100
+  predictive <- check_pilot_predictive(rows, c(27, 14), c(1L, 3L, 6L))
+  gate <- predictive |> dplyr::filter(.data$criterion == "C3")
+  info <- predictive |> dplyr::filter(.data$criterion == "C3-info")
+  expect_true(all(grepl("xgboost", gate$check)))
+  expect_true(all(gate$status == "PASS"))
+  expect_true(all(grepl("ridge", info$check)))
+  expect_true(any(info$status == "FAIL"))
+  expect_equal(summarise_pilot_approval(predictive)$status[3], "PASS")
+})
