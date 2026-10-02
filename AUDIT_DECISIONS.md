@@ -68,3 +68,15 @@ deve começar com C1–C4 = PASS.
   O artigo deve registrar a exclusão em nota.
 - A validação bruta (`minimum_identified_units = 5568`) continua sobre os dados
   originais, antes da exclusão.
+
+## 2026-10-02 — Ridge com lambda por validação temporal (decisão do autor, pós-piloto)
+
+- No primeiro piloto (02/10), `ridge_global_bottom_up` perdeu para o ingênuo
+  sazonal em AL nos 3 horizontes (C3 = FAIL), com `lambda = 1.0` fixo e sem
+  seleção. O XGBoost venceu nas duas UFs.
+- Decisão do autor (opção a): escolher `lambda` por validação temporal em cada
+  origem — últimos `validation_months` (6) da janela de estimação, só rótulos
+  com mês ≤ origem (sem look-ahead), MAE na escala original; depois reestimar na
+  janela inteira com o lambda escolhido. `config.yml`: `lambda: "temporal_cv"`.
+- **Mudança feita depois de ver o piloto**: registrar no artigo. O critério C3
+  NÃO foi alterado; o piloto será refeito com o mesmo critério.
