@@ -9,6 +9,8 @@ required_files <- c(
   "R/global_models.R",
   "prepare_pilot.R",
   "run_pilot.R",
+  "check_pilot.R",
+  "docs/PILOT_APPROVAL_CRITERIA.md",
   "run_national.R",
   "run_national_background.R",
   "render_article.R",
