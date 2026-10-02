@@ -30,3 +30,12 @@ confirmadas pelo contrato do projeto ou por um risco reproduzível.
 
 O parâmetro da API continua centralizado e deve ser validado com
 `probe_bcb_database()` antes de congelar o snapshot usado no artigo.
+
+## Critérios de aprovação do piloto (2026-10-02, aprovado pelo autor)
+
+Os critérios C1–C4 (execução, integridade geográfica e hierárquica, desempenho
+preditivo contra o ingênuo sazonal e reconciliação) estão operacionalizados em
+`docs/PILOT_APPROVAL_CRITERIA.md`, com métrica, limiar e fonte de cada
+verificação. `check_pilot.R` os avalia e grava `output/pilot_approval.csv` e
+`output/pilot_approval.md`; dado ausente conta como FAIL. A execução nacional só
+deve começar com C1–C4 = PASS.

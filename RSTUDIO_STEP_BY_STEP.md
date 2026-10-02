@@ -220,6 +220,28 @@ accuracy |>
 `scaled_origins` informa quantas observações tinham escala sazonal válida. Ele
 pode ser menor que `series_origins` quando uma série de treinamento é constante.
 
+### 7.1. Aprovar o piloto (C1–C4)
+
+Rode `check_pilot.R` e só siga para `run_national_background.R` se C1–C4 =
+PASS. No Console (ou como Background Job):
+
+```r
+source("check_pilot.R")
+```
+
+O script imprime a tabela PASS/FAIL e grava `output/pilot_approval.csv` e
+`output/pilot_approval.md`. Os critérios, métricas e limiares estão em
+`docs/PILOT_APPROVAL_CRITERIA.md`. Dado ausente conta como FAIL.
+
+Se C1 falhar apenas por avisos, leia cada aviso em `output/pilot_approval.md`
+e, quando ele for compreendido e aceitável, registre-o em
+`docs/pilot_warning_explanations.csv` (colunas `target,explanation`). Depois
+rode `check_pilot.R` novamente. Uma falha de mapa reprova C2 mesmo quando
+explicada.
+
+`run_national_background.R` recusa iniciar se `output/pilot_approval.csv` não
+existir ou tiver algum FAIL.
+
 ## 8. Verificar tabelas, figuras e proveniência
 
 ```r
@@ -262,7 +284,8 @@ list.files("output/article", pattern = "[.]pdf$", recursive = TRUE, full.names =
 
 ## 10. Rodar a análise nacional
 
-Só execute depois de revisar o piloto. Inicie
+Só execute depois de revisar o piloto e com C1–C4 = PASS em `check_pilot.R`
+(etapa 7.1). Inicie
 `run_national_background.R` como Background Job. Esse script registra a
 confirmação e chama o fluxo nacional protegido.
 

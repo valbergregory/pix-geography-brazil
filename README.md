@@ -54,9 +54,10 @@ testthat::test_dir(
 4. Execute `diagnose_bcb.R` como Background Job.
 5. Com a API disponível, execute `prepare_pilot.R` como Background Job.
 6. Execute `run_pilot.R` como Background Job.
-7. Confira os resultados em `output/` e execute `render_article.R`.
-8. Somente depois da aprovação do piloto, execute
-   `run_national_background.R`.
+7. Execute `check_pilot.R` e confira `output/pilot_approval.md`
+   (critérios C1–C4 em `docs/PILOT_APPROVAL_CRITERIA.md`).
+8. Confira os resultados em `output/` e execute `render_article.R`.
+9. Somente com C1–C4 = PASS, execute `run_national_background.R`.
 
 As instruções completas estão em `RSTUDIO_STEP_BY_STEP.md`.
 
@@ -79,6 +80,8 @@ As instruções completas estão em `RSTUDIO_STEP_BY_STEP.md`.
   válidas é informado em `scaled_origins`.
 - Checkpoints incorporam hashes dos dados, da configuração e do código crítico.
 - O piloto usa dois estados de regiões diferentes: Alagoas (27) e Roraima (14).
+- O piloto só é aprovado com C1–C4 = PASS em `check_pilot.R`; dado ausente
+  conta como falha (`docs/PILOT_APPROVAL_CRITERIA.md`).
 - Falhas de mapa são avisos no piloto e erros na execução nacional.
 - Modelos globais e artefatos finais fazem parte do DAG do `targets`.
 
