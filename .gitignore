@@ -16,3 +16,9 @@ legacy_backup/
 # pacotes, cópias e backups locais
 *.zip
 *.bak
+
+# Artigo 2: insumos baixados e saídas locais
+article2/data/inputs/*
+article2/output/*
+!article2/data/inputs/.gitkeep
+!article2/output/.gitkeep

@@ -154,3 +154,17 @@ deve começar com C1–C4 = PASS.
   centrais) e **Artigo 1** (difusão espacial; manter, decisão final após as descritivas).
 - Covariáveis e análises dos Artigos 1 e 2 entram num projeto `targets` separado que lê os dados
   compartilhados; o `_targets.R` atual não é alterado por elas.
+
+## 2026-10-03 — Projeto targets do Artigo 2 (`article2/`)
+
+- Projeto separado (config, `_targets.R`, testes próprios); lê o painel do Artigo F e as regras de geografia
+  de `config.yml`, sem alterar o pipeline do F nem a assinatura dos checkpoints do nacional.
+- Insumos por contrato de CSV (docs/ARTIGO2_DADOS.md); loaders validam códigos, duplicatas, negativos e nunca
+  preenchem NA com zero. Fontes e anos continuam **a verificar** pelo autor.
+- Adoção = `QT_PES_PagadorPF` / população adulta de referência. Razões > 1 são sinalizadas e relatadas, não
+  truncadas (possível dupla contagem entre municípios ou problema no denominador).
+- **Decisões em aberto (autor):** (a) denominador adulto — o IBGE não publica adultos por município em 2020
+  (estimativas por idade só em UF): usar Censo 2022 (>= 18) ou 2010 projetado? (b) ano de referência de
+  escassez e conectividade; (c) regras de classe (escassez: 0 agência / mediana; conectividade: tercis) e o
+  mínimo de 30 municípios por célula — hoje são padrões de config, a confirmar antes de ver os dados.
+- A checagem de viabilidade (escassez × conectividade) só roda quando os três CSVs existirem.
