@@ -91,10 +91,7 @@ forecast_error_rows <- function(
       tibble::as_tibble() |>
       dplyr::filter(.data[[index]] == target_month) |>
       dplyr::mutate(prediction = as.numeric(.data$.mean)) |>
-      dplyr::select(
-        dplyr::all_of(c(join_columns, ".model")),
-        .data$prediction
-      ) |>
+      dplyr::select(dplyr::all_of(c(join_columns, ".model", "prediction"))) |>
       dplyr::left_join(actual_table, by = join_columns) |>
       dplyr::left_join(scale_table, by = keys) |>
       dplyr::mutate(
