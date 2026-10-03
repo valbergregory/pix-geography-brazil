@@ -1,0 +1,32 @@
+# Projeto targets do Artigo 2 (banking deserts / leapfrogging x conectividade).
+# Roda com a pasta article2/ como diretório de trabalho; não altera o _targets.R do Artigo F.
+shared:
+  # Painel município-mês do Artigo F (gerado pelo pipeline principal).
+  panel_parquet: "../data/processed/pix_stable_municipality.parquet"
+  # Config do Artigo F: fonte única de stable_mt_codes e municípios excluídos.
+  main_config: "../config.yml"
+
+paths:
+  inputs_dir: "data/inputs"
+  output_dir: "output"
+
+# Contrato dos insumos: um CSV por tema, uma linha por município (código IBGE de 7 dígitos),
+# colunas exatas em docs/ARTIGO2_DADOS.md. Valores ausentes ficam NA; nada é preenchido com zero.
+inputs:
+  population: "population.csv"
+  banking: "banking.csv"
+  connectivity: "connectivity.csv"
+
+adoption:
+  numerator: "QT_PES_PagadorPF"
+  # Denominador: população adulta (>= 18 anos). Definição em aberto: ver AUDIT_DECISIONS.md.
+  denominator: "population_adult"
+  # Razão acima deste valor sinaliza possível dupla contagem de pessoas entre municípios.
+  ratio_flag_threshold: 1.0
+
+feasibility:
+  # Escassez: 0 agências = "none"; demais divididos na mediana das agências por 10 mil adultos.
+  # Conectividade: tercis de acessos de banda larga fixa por 100 domicílios.
+  connectivity_groups: 3
+  # Célula (escassez x conectividade) com menos municípios que isto torna o desenho inviável.
+  minimum_cell_municipalities: 30

@@ -17,6 +17,12 @@ legacy_backup/
 *.zip
 *.bak
 
+# Artigo 2: insumos baixados e saídas locais
+article2/data/inputs/*
+article2/output/*
+!article2/data/inputs/.gitkeep
+!article2/output/.gitkeep
+
 # --- Texto do artigo (local; nao versionado). Publicar apenas o PDF final em artigo/ ---
 overleaf/
 article/
