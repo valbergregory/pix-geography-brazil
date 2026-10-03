@@ -231,7 +231,16 @@ run_origin_tasks <- function(indices, task, workers = 1L, worker_setup = NULL, w
   if (workers <= 1L || length(indices) == 1L) {
     return(lapply(indices, task, data = worker_data))
   }
-  cluster <- parallel::makePSOCKcluster(workers)
+  # Workers skip the project .Rprofile (--no-init-file): with renv, 13 workers
+  # activating the project at once exceeded the connection timeout on Windows
+  # (national run of 2026-10-03: "11 of 13 workers failed to connect"). The
+  # master's library paths are passed below, so the same packages are used.
+  cluster <- parallel::makePSOCKcluster(
+    workers,
+    rscript_args = "--no-init-file",
+    setup_strategy = "sequential",
+    setup_timeout = 600
+  )
   on.exit(parallel::stopCluster(cluster), add = TRUE)
   parallel::clusterCall(cluster, function(paths) {
     .libPaths(paths)
