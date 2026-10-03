@@ -133,3 +133,16 @@ deve começar com C1–C4 = PASS.
   `check_parallel.R` confere isso em 2 origens do piloto antes da rodada nacional.
 - O código novo muda a assinatura dos checkpoints (R/rolling_origin.R entra no hash):
   a rodada nacional começa do zero, como já aconteceria pela mudança de escopo.
+
+## 2026-10-03 — Workers paralelos não conectavam no Windows
+
+- Rodada nacional com `workers: 13`: "Cluster setup failed. 11 of 13 workers failed to connect".
+  Causa provável: cada worker carregava o `.Rprofile` do projeto (ativação do renv e checagem do
+  lockfile) ao mesmo tempo, e a conexão estourava o prazo padrão (2 min). Com 2 workers
+  (`check_parallel.R`) funcionava.
+- Correção (R/rolling_origin.R): workers iniciam com `--no-init-file` (recebem os `.libPaths()` do
+  processo principal, logo os mesmos pacotes do renv), conexão sequencial e prazo de 600 s.
+  Testado com 13 workers.
+- Efeito colateral: o arquivo entra na assinatura dos checkpoints locais; as 11 origens locais já
+  calculadas em sequência são recalculadas (~1 rodada extra de 13 workers). Os checkpoints globais
+  (29 origens) continuam válidos. Nenhum número muda.
