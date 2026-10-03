@@ -30,7 +30,7 @@ Erro de memória: baixar `workers` e rodar de novo.
 2. Ler os resultados na ordem das perguntas do Artigo F (precisão global × local; reconciliação; confiabilidade).
 3. `renv::status()` ainda acusa "out-of-sync": rever com calma (não usar `renv::restore()`).
 
-## Programa de pesquisa (proposta, aguardando o autor)
+## Programa de pesquisa (APROVADO em 03/10: três artigos)
 `docs/PROGRAMA_DE_PESQUISA.md`: o repositório hoje é o **Artigo F (previsão)**; propostos mais dois
 artigos complementares — **Artigo 2 (banking deserts / leapfrogging × conectividade; P1 + P2 aprovadas
 como centrais em 03/10)** e **Artigo 1 (difusão espacial; decidir após descritivas)**. Covariáveis ainda

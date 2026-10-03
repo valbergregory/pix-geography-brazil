@@ -146,3 +146,11 @@ deve começar com C1–C4 = PASS.
 - Efeito colateral: o arquivo entra na assinatura dos checkpoints locais; as 11 origens locais já
   calculadas em sequência são recalculadas (~1 rodada extra de 13 workers). Os checkpoints globais
   (29 origens) continuam válidos. Nenhum número muda.
+
+## 2026-10-03 — Programa de pesquisa com três artigos (decisão do autor)
+
+- Aprovado o programa de docs/PROGRAMA_DE_PESQUISA.md: **Artigo F** (previsão; este pipeline, escopo
+  inalterado), **Artigo 2** (banking deserts / leapfrogging × conectividade; perguntas P1 + P2
+  centrais) e **Artigo 1** (difusão espacial; manter, decisão final após as descritivas).
+- Covariáveis e análises dos Artigos 1 e 2 entram num projeto `targets` separado que lê os dados
+  compartilhados; o `_targets.R` atual não é alterado por elas.
