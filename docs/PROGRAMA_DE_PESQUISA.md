@@ -1,7 +1,8 @@
 # Programa de pesquisa "A Geografia do Pix" — auditoria intelectual e proposta (2026-10-03)
 
-**Status: PROPOSTA, aguardando decisão do autor.** Nada do projeto foi alterado por causa deste
-documento. Ele registra a auditoria feita em 03/10/2026 para retomar a conversa depois.
+O Artigo F (previsão) segue com o escopo atual; os Artigos 1 e 2 compartilham dados e infraestrutura
+em projeto `targets` separado, sem alterar o pipeline do F. A decisão final sobre o Artigo 1 continua
+condicionada à evidência descritiva (passo 7).
 
 ## A. O que o projeto é hoje (evidência no repositório)
 - Título e pergunta (article/outline.md): *Forecasting Pix Across Brazil: Global Models and Coherent
