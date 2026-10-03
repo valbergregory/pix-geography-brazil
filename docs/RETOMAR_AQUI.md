@@ -4,8 +4,16 @@
 - Pasta local: `D:\R - Projetos\pix-geography-r` (RStudio, R 4.4.3). Snapshot congelado de 30/08/2026.
 - **Piloto APROVADO em 03/10: C1–C4 = PASS** (`output/pilot_approval.md`). ARIMA com urca: 10.614
   previsões por modelo local, nenhuma NA/NaN. C3-info (Ridge perde do ingênuo) é só informativo.
-- **Rodada nacional iniciada em 03/10** (`run_national_background.R`, Background Job) com
-  `execution: workers: 13` no `config.yml` local (14 núcleos físicos, ≥ 64 GB). Estimativa 10–12 h.
+- **Rodada nacional: INTERROMPIDA, precisa ser reiniciada.** 1ª tentativa rodou em sequência
+  (`workers: 1` não salvo) e foi parada; 2ª tentativa com `workers: 13` falhou ao abrir os workers
+  ("11 of 13 workers failed to connect") — corrigido no commit 8bbb47c (workers sem `.Rprofile`,
+  conexão sequencial, prazo 600 s). Checkpoints: 29 origens globais válidas; as 11 locais serão
+  recalculadas (mudou o arquivo que entra na assinatura).
+- **Para retomar:** `git pull` → conferir `yaml::read_yaml("config.yml")$execution$workers` = 13 →
+  `run_national_background.R` como Background Job → o log deve mostrar
+  `Evaluating 29 origins on 13 parallel workers`. Previsão: 4–5 h.
+- Melhoria futura (não feita): o ETS é ajustado duas vezes (etapa local e reconciliação) —
+  ~1/3 do tempo; unificar numa próxima rodada.
 - Decisões de 02–03/10: todas em AUDIT_DECISIONS.md (snapshot, exclusão RN, ridge temporal_cv,
   XGBoost principal, urca, avisos do local_errors, paralelização).
 
