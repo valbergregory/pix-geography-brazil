@@ -118,3 +118,18 @@ deve começar com C1–C4 = PASS.
   (2) no código. A correção muda R/metrics.R, que entra na assinatura dos
   checkpoints: as rodadas seguintes (inclusive a nacional) recalculam do zero; o
   piloto aprovado não precisa ser refeito, porque a correção não altera nenhum número.
+
+## 2026-10-03 — Avaliação por origem em paralelo (rodada nacional)
+
+- Motivo: o piloto (117 municípios) levou ~2 h em uma thread; a extrapolação linear
+  para ~5.570 municípios dá ~80–100 h. Decisão do pesquisador: paralelizar (opção b).
+- Implementação (R/rolling_origin.R): as origens da avaliação com origem móvel são
+  independentes; as que não têm checkpoint são distribuídas entre `execution$workers`
+  processos R (pacote base `parallel`, PSOCK, funciona no Windows; sem dependência
+  nova no renv.lock). Cada origem roda a mesma função (`evaluate_origin_index`) em
+  sequência ou em paralelo, grava o próprio checkpoint e uma linha em `progress.log`.
+  `workers: 1` (padrão) mantém o comportamento anterior.
+- Os resultados não dependem do número de workers (não há sorteio nesses modelos);
+  `check_parallel.R` confere isso em 2 origens do piloto antes da rodada nacional.
+- O código novo muda a assinatura dos checkpoints (R/rolling_origin.R entra no hash):
+  a rodada nacional começa do zero, como já aconteceria pela mudança de escopo.

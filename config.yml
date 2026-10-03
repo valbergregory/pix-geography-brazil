@@ -65,6 +65,12 @@ models:
 execution:
   random_seed: 20260830
   parallel_threads: 1
+  # Rolling-origin evaluation (local and reconciled models): number of parallel R
+  # workers, one origin per worker (base R `parallel`, PSOCK). 1 = sequential;
+  # "auto" = physical cores - 1. Results do not depend on this value. Each worker
+  # holds its own copy of the panel and fits its own models: keep
+  # workers <= RAM in GB / 3 for the national run. See AUDIT_DECISIONS.md (2026-10-03).
+  workers: 1
   resume: true
   shap_sample_rows: 2000
 

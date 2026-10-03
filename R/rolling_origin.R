@@ -106,48 +106,158 @@ rolling_origin_evaluate <- function(
     dir.create(checkpoint_directory, recursive = TRUE, showWarnings = FALSE)
   }
 
-  results <- vector("list", length(origins))
-  for (index in seq_along(origins)) {
-    origin <- origins[[index]]
-    if (use_checkpoints) {
-      checkpoint <- file.path(
-        checkpoint_directory,
-        paste0("origin_", format(as.Date(origin), "%Y-%m"), ".rds")
-      )
-      if (file.exists(checkpoint)) {
-        message(
-          "Evaluating origin ", index, "/", length(origins), " ",
-          format(origin), ": checkpoint loaded."
-        )
-        results[[index]] <- readRDS(checkpoint)
-        next
-      }
-    }
+  spec <- list(
+    origins = origins,
+    horizons = horizons,
+    reconciled = reconciled,
+    include_mint_shrink = isTRUE(config$analysis$include_full_mint),
+    include_arima = include_arima,
+    seasonal_period = config$analysis$seasonal_period,
+    batch = batch,
+    checkpoint_directory = if (use_checkpoints) checkpoint_directory else NULL
+  )
 
-    message(
-      "Evaluating origin ", index, "/", length(origins), " ",
-      format(origin), "."
-    )
-    started <- proc.time()[["elapsed"]]
-    result <- evaluate_forecast_origin(
-      hierarchy_ts = hierarchy_ts,
-      origin = origin,
-      horizons = horizons,
-      reconciled = reconciled,
-      include_mint_shrink = isTRUE(config$analysis$include_full_mint),
-      include_arima = include_arima,
-      seasonal_period = config$analysis$seasonal_period
-    )
-    elapsed <- proc.time()[["elapsed"]] - started
-    result <- result |>
-      dplyr::mutate(
-        evaluation_batch = batch,
-        origin_elapsed_seconds = elapsed
+  results <- vector("list", length(origins))
+  pending <- integer()
+  for (index in seq_along(origins)) {
+    checkpoint <- origin_checkpoint_path(spec, index)
+    if (!is.null(checkpoint) && file.exists(checkpoint)) {
+      message(
+        "Evaluating origin ", index, "/", length(origins), " ",
+        format(origins[[index]]), ": checkpoint loaded."
       )
-    if (use_checkpoints) {
-      saveRDS(result, checkpoint)
+      results[[index]] <- readRDS(checkpoint)
+    } else {
+      pending <- c(pending, index)
     }
-    results[[index]] <- result
   }
+
+  workers <- resolve_origin_workers(config$execution$workers, length(pending))
+  if (workers > 1L) {
+    message(
+      "Evaluating ", length(pending), " origins on ", workers,
+      " parallel workers", if (use_checkpoints) {
+        paste0(" (progress: ", file.path(checkpoint_directory, "progress.log"), ")")
+      }, "."
+    )
+  }
+  computed <- run_origin_tasks(
+    indices = pending,
+    task = evaluate_origin_index,
+    workers = workers,
+    worker_setup = setup_origin_worker,
+    worker_data = list(hierarchy_ts = hierarchy_ts, spec = spec)
+  )
+  results[pending] <- computed
   dplyr::bind_rows(results)
+}
+
+origin_checkpoint_path <- function(spec, index) {
+  if (is.null(spec$checkpoint_directory)) {
+    return(NULL)
+  }
+  file.path(
+    spec$checkpoint_directory,
+    paste0("origin_", format(as.Date(spec$origins[[index]]), "%Y-%m"), ".rds")
+  )
+}
+
+# One rolling origin: fit, forecast, score and (when resuming) save the checkpoint.
+# The same function runs sequentially and inside the parallel workers, so the
+# results do not depend on execution$workers.
+evaluate_origin_index <- function(index, data) {
+  spec <- data$spec
+  origin <- spec$origins[[index]]
+  message(
+    "Evaluating origin ", index, "/", length(spec$origins), " ",
+    format(origin), "."
+  )
+  started <- proc.time()[["elapsed"]]
+  result <- evaluate_forecast_origin(
+    hierarchy_ts = data$hierarchy_ts,
+    origin = origin,
+    horizons = spec$horizons,
+    reconciled = spec$reconciled,
+    include_mint_shrink = spec$include_mint_shrink,
+    include_arima = spec$include_arima,
+    seasonal_period = spec$seasonal_period
+  )
+  elapsed <- proc.time()[["elapsed"]] - started
+  result <- result |>
+    dplyr::mutate(
+      evaluation_batch = spec$batch,
+      origin_elapsed_seconds = elapsed
+    )
+  checkpoint <- origin_checkpoint_path(spec, index)
+  if (!is.null(checkpoint)) {
+    saveRDS(result, checkpoint)
+    cat(
+      sprintf(
+        "%s origin %d/%d %s done in %.0f s\n",
+        format(Sys.time(), "%Y-%m-%d %H:%M:%S"), index, length(spec$origins),
+        format(origin), elapsed
+      ),
+      file = file.path(spec$checkpoint_directory, "progress.log"),
+      append = TRUE
+    )
+  }
+  result
+}
+
+# execution$workers: positive integer or "auto" (physical cores - 1); never more
+# workers than pending tasks. Missing means 1 (sequential, the previous behaviour).
+resolve_origin_workers <- function(value, n_tasks) {
+  if (is.null(value)) {
+    value <- 1L
+  }
+  if (identical(tolower(as.character(value)), "auto")) {
+    cores <- parallel::detectCores(logical = FALSE)
+    value <- if (is.na(cores)) 1L else max(1L, cores - 1L)
+  }
+  value <- suppressWarnings(as.integer(value))
+  if (length(value) != 1L || is.na(value) || value < 1L) {
+    stop("execution$workers must be a positive integer or \"auto\".", call. = FALSE)
+  }
+  max(1L, min(value, as.integer(n_tasks)))
+}
+
+# Runs task(index, worker_data) for every index. With workers > 1 it uses a PSOCK
+# cluster (base R `parallel`, works on Windows): worker_data is sent once to each
+# worker, tasks are load-balanced, and results come back in the order of indices.
+run_origin_tasks <- function(indices, task, workers = 1L, worker_setup = NULL, worker_data = list()) {
+  if (length(indices) == 0L) {
+    return(list())
+  }
+  if (workers <= 1L || length(indices) == 1L) {
+    return(lapply(indices, task, data = worker_data))
+  }
+  cluster <- parallel::makePSOCKcluster(workers)
+  on.exit(parallel::stopCluster(cluster), add = TRUE)
+  parallel::clusterCall(cluster, function(paths) {
+    .libPaths(paths)
+    invisible(NULL)
+  }, .libPaths())
+  if (!is.null(worker_setup)) {
+    parallel::clusterCall(cluster, worker_setup, getwd())
+  }
+  parallel::clusterCall(cluster, function(data) {
+    assign(".origin_task_data", data, envir = globalenv())
+    invisible(NULL)
+  }, worker_data)
+  runner <- local(
+    function(index) task(index, data = get(".origin_task_data", envir = globalenv())),
+    envir = list2env(list(task = task), parent = globalenv())
+  )
+  parallel::parLapplyLB(cluster, indices, runner)
+}
+
+# Worker start-up for the forecasting tasks: same packages and project code as the
+# targets pipeline.
+setup_origin_worker <- function(project_dir) {
+  setwd(project_dir)
+  for (package in c("dplyr", "tsibble", "fabletools", "fable", "feasts")) {
+    suppressPackageStartupMessages(library(package, character.only = TRUE))
+  }
+  targets::tar_source(file.path(project_dir, "R"), envir = globalenv())
+  invisible(TRUE)
 }
