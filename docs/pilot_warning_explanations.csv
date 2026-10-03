@@ -1,2 +1,3 @@
 target,explanation
 raw_snapshot_files,"Esperado: o snapshot congelado de 2026-08-30 foi gravado por versão anterior do código, cujo .json não registra sha256_parquet; a integridade não é conferida automaticamente (decisão de 2026-10-02 em AUDIT_DECISIONS.md)."
+local_errors,"Esperado (piloto de 2026-10-02, com urca): (1) ""NaNs produzidos"" vem da estimação do ARIMA (fable/stats) ao testar especificações candidatas; não afeta as previsões pontuais — as 10.614 previsões de cada modelo local (arima, drift, ets, naive, seasonal_naive) estão todas preenchidas (nenhum NA ou NaN); (2) aviso de depreciação do tidyselect 1.2.0 (.data$prediction em select), sem efeito no resultado e corrigido em R/metrics.R para as rodadas seguintes (decisão de 2026-10-03 em AUDIT_DECISIONS.md)."

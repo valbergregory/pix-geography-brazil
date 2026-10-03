@@ -104,3 +104,17 @@ deve começar com C1–C4 = PASS.
   (ARIMA(1,1,2)(1,0,1)[12] com drift).
 - Correção: `urca` entra em `required_packages` (R/setup.R) e no `renv.lock`.
   Os resultados do ARIMA dos pilotos anteriores não valem; o piloto é refeito.
+
+## 2026-10-03 — Piloto refeito com o ARIMA: avisos do `local_errors`
+
+- O piloto refeito (commit 50a63cd) recalculou o `local_errors` do zero (1h13min,
+  sem checkpoint). Os 5 modelos locais têm 10.614 previsões cada, nenhuma NA ou NaN:
+  o ARIMA voltou a funcionar.
+- C2, C3 e C4 PASS; C1 falhou só por um aviso sem explicação no `local_errors`:
+  (1) "NaNs produzidos", emitido pela estimação do ARIMA ao testar especificações
+  candidatas, sem efeito nas previsões pontuais; (2) depreciação do tidyselect 1.2.0
+  (`.data$prediction` dentro de `select()` em R/metrics.R).
+- Decisão: registrar a explicação em docs/pilot_warning_explanations.csv e corrigir
+  (2) no código. A correção muda R/metrics.R, que entra na assinatura dos
+  checkpoints: as rodadas seguintes (inclusive a nacional) recalculam do zero; o
+  piloto aprovado não precisa ser refeito, porque a correção não altera nenhum número.
