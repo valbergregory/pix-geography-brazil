@@ -1,107 +1,131 @@
 # pix-geography-brazil
 
-Compêndio reproduzível (R, {targets}, {renv}, DuckDB) do estudo em desenvolvimento:
+Código do estudo *Forecasting Pix Across Brazil: Global Models and Coherent
+Geographic Reconciliation* (Valber Gregory Barbosa Costa Bezerra Santos,
+UFAL / TJAL). Projeto em R, com `{targets}`, `{renv}` e DuckDB.
 
-> **Forecasting Pix Across Brazil: Global Models and Coherent Geographic Reconciliation**
-> Valber Gregory Barbosa Costa Bezerra Santos (UFAL / TJAL)
+Pergunta de pesquisa: modelos globais de previsão melhoram as previsões
+municipais de atividade do Pix em relação a benchmarks estatísticos locais, e
+quais estratégias de reconciliação preservam acurácia e coerência geográfica na
+hierarquia município → UF → região → Brasil? O estudo também examina em quais
+territórios a previsão é menos confiável.
 
-Pergunta: é possível prever a difusão e o volume do Pix por município, com modelos
-globais e reconciliação hierárquica município → UF → região → Brasil, e onde a
-previsão é menos confiável? **Situação (2026-09):** pipeline e testes prontos;
-extração municipal do BCB, descritivas e quebras estruturais executadas; modelos
-globais e artigo ainda não estimados/escritos. Este repositório contém código,
-fazem parte do repositório.
+## Dados e fontes
 
-![R](https://img.shields.io/badge/R-4.4-276DC3?logo=r) ![targets](https://img.shields.io/badge/pipeline-targets%20%7C%20DuckDB-1f6b73) ![License](https://img.shields.io/badge/code-MIT-green)
+- **Transações Pix por município** — Banco Central do Brasil, serviço de dados
+  abertos (OData/Olinda), série mensal a partir de novembro de 2020.
+  Catálogo: <https://dadosabertos.bcb.gov.br/dataset/pix>; recurso
+  `TransacoesPixPorMunicipio`. O endpoint e os parâmetros da consulta ficam em
+  `config.yml` (seção `bcb`). Os dados não são redistribuídos neste
+  repositório: o pipeline os baixa, grava um snapshot Parquet com metadados e
+  SHA-256 em `data/raw/` e pode reutilizar um snapshot congelado
+  (`bcb.frozen_snapshot`).
+- **Malha municipal** — IBGE, obtida pelo pacote `geobr`
+  (`geography.geometry_year` em `config.yml`) e armazenada em cache em
+  `data/processed/`.
 
-## Versão 2 corrigida
+Variável-alvo: `payer_count` = `QT_PagadorPF` + `QT_PagadorPJ` (transações
+Pix enviadas, perspectiva do pagador). O dicionário de dados
+(`data_dictionary.csv`) descreve cada campo da fonte, o campo correspondente
+no projeto, unidade, periodicidade, nível geográfico, papel na análise e
+status de verificação; as linhas de IBGE, Anatel e MTE listadas ali estão
+marcadas como pendentes e não entram no pipeline atual.
 
-Projeto integralmente em R para extrair dados municipais do Pix, construir uma
-geografia temporalmente estável, avaliar previsões por origem móvel, reconciliar
-a hierarquia município–UF–região–Brasil e produzir tabelas e figuras para LaTeX.
+Decisões sobre o tratamento dos dados (unidade territorial estável em Mato
+Grosso, municípios excluídos do painel, snapshot congelado, lacunas
+município-mês nunca preenchidas com zero) estão em `config.yml` e em
+`AUDIT_DECISIONS.md`.
 
-## Fonte dos dados
+## Estrutura
 
-Os dados de transações Pix são obtidos do serviço oficial de dados abertos do
-Banco Central do Brasil (BCB):
-
-- catálogo: <https://dadosabertos.bcb.gov.br/dataset/pix>;
-- recurso por município:
-  <https://dadosabertos.bcb.gov.br/dataset/pix/resource/268e3bf6-b096-4006-83cd-813697012ece>.
-
-O endpoint e o parâmetro `DataBase` ficam centralizados em `config.yml`. Como a
-disponibilidade e o contrato do serviço são externos ao projeto, execute
-`diagnose_bcb.R` antes de uma nova extração. O código não transforma falha HTTP
-em zero e não troca silenciosamente o parâmetro da API.
-
-## Fluxo recomendado
-
-1. Abra `pix-geography.Rproj` no RStudio.
-2. Execute `install_packages.R` como **Background Job**.
-3. No Console, carregue o código e rode os testes:
-
-```r
-options(error = NULL)
-targets::tar_source("R")
-testthat::test_dir(
-  "tests/testthat",
-  reporter = "summary",
-  stop_on_failure = FALSE
-)
+```
+.
+├── _targets.R                   # DAG: extração → validação → painel → modelos → relatórios
+├── config.yml                   # fonte, qualidade, horizontes, modelos, execução, geografia, relatórios
+├── data_dictionary.csv          # dicionário de dados (fonte, campo, definição, unidade, papel, status)
+├── R/
+│   ├── setup.R                  # pacotes exigidos
+│   ├── config.R                 # leitura e validação de config.yml
+│   ├── extract_pix.R            # extração do BCB (OData), retentativas, snapshot
+│   ├── validate_pix.R           # esquema, meses, chaves, valores, cobertura municipal
+│   ├── build_targets.R          # painel município-mês com geografia estável; Parquet
+│   ├── geography.R              # malha municipal (geobr), validação e cache
+│   ├── duckdb_layer.R           # catálogo DuckDB (tabela pix_stable_municipality)
+│   ├── breaks.R                 # quebras estruturais (Bai–Perron, PELT)
+│   ├── baselines.R              # naive, naive sazonal, drift, ETS, ARIMA (fable)
+│   ├── reconciliation.R         # ETS reconciliado: bottom-up e MinT-WLS
+│   ├── global_models.R          # Ridge (glmnet) e XGBoost globais; agregação bottom-up
+│   ├── rolling_origin.R         # avaliação por origem móvel, checkpoints, paralelização
+│   ├── metrics.R                # MASE, RMSSE, MAE, RMSE, WAPE
+│   ├── comparisons.R            # comparações pareadas de perda (Newey–West)
+│   ├── econometrics.R           # regressão de confiabilidade dos erros (fixest)
+│   ├── pilot_approval.R         # critérios C1–C4 do piloto
+│   └── reporting_*.R            # tabelas (tinytable/modelsummary), figuras, mapas, manifestos
+├── tests/testthat/              # testes de extração, geografia, métricas, modelos globais, piloto
+├── docs/
+│   ├── PILOT_APPROVAL_CRITERIA.md       # critérios C1–C4, métricas, limiares e fontes
+│   ├── pilot_warning_explanations.csv   # avisos do piloto com explicação
+│   ├── PROGRAMA_DE_PESQUISA.md          # programa de pesquisa e relação com outros artigos
+│   └── RETOMAR_AQUI.md                  # notas de retomada do autor
+├── AUDIT_DECISIONS.md           # decisões registradas sobre dados, modelos e execução
+├── RSTUDIO_STEP_BY_STEP.md      # roteiro completo de execução no RStudio
+├── VERSION_2_CHANGELOG.md, R_ONLY_CHANGELOG.md
+├── install_packages.R, diagnose_bcb.R, prepare_pilot.R, run_pilot.R,
+│   check_pilot.R, run_national_background.R, run_national.R,
+│   render_article.R, check_project.R, check_parallel.R, check_extract.R
+├── renv.lock                    # versões dos pacotes (R 4.4.3)
+├── data/raw/                    # snapshot Parquet + JSON de metadados (não versionados)
+├── data/processed/              # pix_stable_municipality.parquet, pix_geography.duckdb, checkpoints
+└── output/                      # tables/, figures/, latex/ (manifestos SHA-256), article/, session_info_*.txt
 ```
 
-4. Execute `diagnose_bcb.R` como Background Job.
-5. Com a API disponível, execute `prepare_pilot.R` como Background Job.
-6. Execute `run_pilot.R` como Background Job.
-7. Execute `check_pilot.R` e confira `output/pilot_approval.md`
-   (critérios C1–C4 em `docs/PILOT_APPROVAL_CRITERIA.md`).
-8. Confira os resultados em `output/` e execute `render_article.R`.
-9. Somente com C1–C4 = PASS, execute `run_national_background.R`.
+Banco de dados: `data/processed/pix_geography.duckdb` contém a tabela
+`pix_stable_municipality`, materializada a partir do Parquet de mesmo nome
+(painel município-mês com chaves de UF e região).
 
-As instruções completas estão em `RSTUDIO_STEP_BY_STEP.md`.
+## Como reproduzir
 
-## Principais saídas
-
-- snapshot imutável em `data/raw/`, com metadados e SHA-256;
-- painel Parquet e catálogo DuckDB portátil em `data/processed/`;
-- métricas e erros por origem em `output/`;
-- tabelas LaTeX em `output/tables/`;
-- figuras PDF/PNG em `output/figures/`;
-- manifestos com SHA-256 em `output/latex/`;
-- `session_info_*.txt` para auditoria computacional;
-- artigo Quarto em `article/study.qmd`.
-
-## Decisões de integridade
-
-- Lacunas município–mês interrompem o fluxo; nunca são preenchidas
-  automaticamente com zero.
-- Escalas sazonais nulas são excluídas de MASE/RMSSE e o número de observações
-  válidas é informado em `scaled_origins`.
-- Checkpoints incorporam hashes dos dados, da configuração e do código crítico.
-- O piloto usa dois estados de regiões diferentes: Alagoas (27) e Roraima (14).
-- O piloto só é aprovado com C1–C4 = PASS em `check_pilot.R`; dado ausente
-  conta como falha (`docs/PILOT_APPROVAL_CRITERIA.md`).
-- Falhas de mapa são avisos no piloto e erros na execução nacional.
-- Modelos globais e artefatos finais fazem parte do DAG do `targets`.
-
-## Reprodutibilidade
-
-O ZIP não traz uma biblioteca binária do Windows. Na primeira execução,
-`install_packages.R` inicializa o `renv`, instala as dependências e cria
-`renv.lock`. Preserve esse arquivo junto com a versão submetida do artigo.
-
-Para verificar o projeto inteiro sem iniciar a modelagem:
+Requisitos: R >= 4.4 (lockfile gerado com R 4.4.3), RStudio, e TinyTeX/LaTeX
+apenas para compilar o artigo. Pacotes em `R/setup.R` e `renv.lock`.
 
 ```r
+# 1. abrir pix-geography.Rproj e instalar o ambiente (Background Job)
+source("install_packages.R")
+
+# 2. testes
+targets::tar_source("R")
+testthat::test_dir("tests/testthat", reporter = "summary")
+
+# 3. API do BCB, piloto (Alagoas e Roraima) e critérios C1–C4
+source("diagnose_bcb.R")
+source("prepare_pilot.R")
+source("run_pilot.R")
+source("check_pilot.R")            # grava output/pilot_approval.{csv,md}
+
+# 4. execução nacional (só com C1–C4 = PASS) e artigo
+source("run_national_background.R")
+source("render_article.R")         # article/manuscript.qmd (não versionado)
+
+# diagnóstico geral do projeto
 source("check_project.R")
 ```
 
-Uma indisponibilidade do BCB ou do LaTeX pode aparecer como item de atenção sem
-significar erro nos pacotes R ou nos testes unitários.
+Variáveis de ambiente usadas pelos scripts: `PIX_FULL_RUN` (escopo nacional vs.
+piloto) e `PIX_CONFIRM_NATIONAL` (confirmação exigida por `run_national.R`).
+Não há credenciais: os dados do BCB são abertos. Semente, número de workers e
+demais parâmetros de execução ficam em `config.yml` (`execution`). O roteiro
+detalhado está em `RSTUDIO_STEP_BY_STEP.md`.
 
 ## Licença
 
-Código: MIT (`LICENSE`). Dados do Banco Central do Brasil: dados abertos, nos termos
-da fonte (não redistribuídos aqui; o pipeline os baixa). Ver `LICENSING.md`.
+- Código (R, testes, configuração, `_targets.R`): MIT (`LICENSE`).
+- Documentação, tabelas e figuras produzidas pelo pipeline: CC BY 4.0.
+- Dados do Pix: Banco Central do Brasil, dados abertos, nos termos da fonte;
+  não redistribuídos aqui. Malha municipal: IBGE (dados públicos).
 
-Página do projeto: <https://valbergregory.github.io/pesquisa/pix-geography-brazil/>.
+Detalhes em `LICENSING.md`.
+
+## Citação
+
+Ver `CITATION.cff`. Página do projeto:
+<https://valbergregory.github.io/pesquisa/pix-geography-brazil/>.
